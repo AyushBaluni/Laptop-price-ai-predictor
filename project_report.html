@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Laptop Price Estimator — Project Report</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, "Segoe UI", system-ui, sans-serif; font-size: 14px; line-height: 1.65; background: #f7f8fa; color: #1f2328; padding: 32px 16px 56px; }
+  .page { max-width: 760px; margin: 0 auto; }
+
+  h1 { font-size: 24px; font-weight: 800; letter-spacing: -0.4px; color: #1f2328; }
+  h2 { font-size: 15px; font-weight: 700; color: #1f2328; margin: 28px 0 10px; border-bottom: 1px solid #e5e7eb; padding-bottom: 6px; }
+  h3 { font-size: 13px; font-weight: 700; color: #374151; margin: 14px 0 6px; }
+  p  { margin-bottom: 10px; color: #374151; }
+  ul { padding-left: 20px; margin-bottom: 10px; }
+  li { margin-bottom: 4px; }
+  a  { color: #3b82d4; }
+  code { background: #f0f2f5; border: 1px solid #e5e7eb; border-radius: 3px; padding: 1px 5px; font-size: 12.5px; font-family: "Consolas", "Fira Code", monospace; }
+
+  .meta { font-size: 12px; color: #57606a; margin-top: 4px; margin-bottom: 24px; }
+
+  /* Disclaimer */
+  .disclaimer { background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 12px 16px; font-size: 12.5px; color: #78350f; margin-bottom: 24px; }
+  .disclaimer strong { font-weight: 700; }
+
+  /* Cards */
+  .card { background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 18px 20px; margin-bottom: 16px; }
+
+  /* KPI grid */
+  .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 16px; }
+  @media (max-width: 540px) { .kpi-grid { grid-template-columns: repeat(2,1fr); } }
+  .kpi { background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 14px; text-align: center; }
+  .kpi .val { font-size: 24px; font-weight: 800; color: #3b82d4; }
+  .kpi .lbl { font-size: 11px; color: #57606a; margin-top: 2px; }
+
+  /* Table */
+  table { width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 10px; }
+  th { background: #f7f8fa; text-align: left; padding: 8px 10px; font-weight: 600; font-size: 12px; color: #57606a; border-bottom: 1px solid #e5e7eb; }
+  td { padding: 8px 10px; border-bottom: 1px solid #f0f2f5; vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  .badge { display: inline-block; background: #3b82d4; color: #fff; font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 3px; text-transform: uppercase; letter-spacing: .3px; }
+  .badge.green { background: #16a34a; }
+  .badge.amber { background: #d97706; }
+
+  /* Coeff bars */
+  .coeff-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .coeff-label { font-size: 12px; color: #374151; width: 160px; flex-shrink: 0; }
+  .coeff-track { flex: 1; height: 8px; background: #f0f2f5; border-radius: 4px; overflow: hidden; }
+  .coeff-fill  { height: 100%; border-radius: 4px; background: #3b82d4; }
+  .coeff-fill.neg { background: #9ca3af; }
+  .coeff-val   { font-size: 11.5px; color: #57606a; width: 55px; text-align: right; flex-shrink: 0; font-family: monospace; }
+
+  /* File list */
+  .file-row { display: flex; gap: 12px; align-items: flex-start; padding: 9px 0; border-bottom: 1px solid #f0f2f5; }
+  .file-row:last-child { border-bottom: none; }
+  .file-name { font-family: "Consolas", monospace; font-size: 12.5px; color: #1f2328; font-weight: 600; width: 250px; flex-shrink: 0; }
+  .file-desc { font-size: 12.5px; color: #57606a; }
+
+  /* Prediction table highlight */
+  .price-cell { font-weight: 700; color: #1f2328; }
+
+  footer { text-align: center; font-size: 12px; color: #9ca3af; border-top: 1px solid #e5e7eb; padding-top: 16px; margin-top: 8px; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- Title -->
+  <h1>Laptop Price Estimator</h1>
+  <div class="meta">Project Report &nbsp;·&nbsp; Ridge Regression on Real Historical Data &nbsp;·&nbsp; Dataset: Kaggle / idealo.de (2019)</div>
+
+  <!-- Disclaimer -->
+  <div class="disclaimer">
+    <strong>Historical estimate notice:</strong> All price predictions are based on the 2019 laptop price dataset
+    scraped from idealo.de. Prices are in <strong>Indian Rupees (&#8377; INR)</strong>. Current market prices may differ
+    significantly due to inflation, new product generations, and supply-chain changes.
+    Predictions are <em>reference estimates only</em> and are not guaranteed current market prices.
+  </div>
+
+  <!-- KPIs -->
+  <div class="kpi-grid">
+    <div class="kpi"><div class="val">1,303</div><div class="lbl">Training rows</div></div>
+    <div class="kpi"><div class="val">0.826</div><div class="lbl">R&sup2; — test set</div></div>
+    <div class="kpi"><div class="val">20.8%</div><div class="lbl">MAPE — test set</div></div>
+    <div class="kpi"><div class="val">31</div><div class="lbl">Input features</div></div>
+  </div>
+
+  <!-- Dataset -->
+  <h2>1. Dataset</h2>
+  <div class="card">
+    <table>
+      <tr><th>Field</th><th>Value</th></tr>
+      <tr><td>File</td><td><code>laptop_price.csv</code></td></tr>
+      <tr><td>Source</td><td>Kaggle &mdash; <em>Laptop Price Dataset</em> (CampusX / Rashmi Margani)</td></tr>
+      <tr><td>Original scrape</td><td>idealo.de &mdash; <strong>2019</strong></td></tr>
+      <tr><td>Rows</td><td>1,303</td></tr>
+      <tr><td>Price currency</td><td><strong>Indian Rupees (&#8377; INR)</strong> &mdash; confirmed by inspection (range: &#8377;9,271 &ndash; &#8377;3,24,955)</td></tr>
+      <tr><td>Missing values</td><td><span class="badge green">0</span> across all 12 columns</td></tr>
+      <tr><td>Columns</td><td>Company, TypeName, Inches, ScreenResolution, Cpu, Ram, Memory, Gpu, OpSys, Weight, Price</td></tr>
+    </table>
+    <h3>Categorical distributions</h3>
+    <table>
+      <tr><th>Feature</th><th>Unique values</th><th>Examples</th></tr>
+      <tr><td>Company</td><td>19</td><td>Dell, HP, Lenovo, Apple, Asus, MSI, Acer&hellip;</td></tr>
+      <tr><td>TypeName</td><td>6</td><td>Notebook, Ultrabook, Gaming, 2-in-1, Workstation, Netbook</td></tr>
+      <tr><td>OpSys</td><td>9</td><td>Windows 10, macOS, Linux, Chrome OS, No OS&hellip;</td></tr>
+      <tr><td>RAM</td><td>9</td><td>2, 4, 6, 8, 12, 16, 24, 32, 64 GB</td></tr>
+      <tr><td>Memory</td><td>Mixed string</td><td>&ldquo;512GB SSD&rdquo;, &ldquo;1TB HDD&rdquo;, &ldquo;128GB SSD + 1TB HDD&rdquo;&hellip;</td></tr>
+    </table>
+  </div>
+
+  <!-- Model -->
+  <h2>2. Model — Ridge Regression</h2>
+  <div class="card">
+    <table>
+      <tr><th>Property</th><th>Detail</th></tr>
+      <tr><td>Algorithm</td><td>Ridge Regression (&lambda; = 0.01) on <code>log(price_INR)</code></td></tr>
+      <tr><td>Solver</td><td>Normal equations (Gauss-Jordan inverse), pure Python stdlib — no scikit-learn</td></tr>
+      <tr><td>Target</td><td><code>log(Price)</code> &rarr; exponentiated for final &#8377; output</td></tr>
+      <tr><td>Features</td><td>10 numeric + 21 one-hot dummies (company, type, OS)</td></tr>
+      <tr><td>Train / Test split</td><td>80 / 20 (random seed 42) &mdash; 1,042 train / 261 test</td></tr>
+      <tr><td><strong>R&sup2; (test)</strong></td><td><strong>0.826</strong> &mdash; model explains 82.6% of log-price variance</td></tr>
+      <tr><td><strong>MAPE (test)</strong></td><td><strong>20.8%</strong> &mdash; typical absolute % error on held-out prices</td></tr>
+      <tr><td>RMSE (log-price)</td><td>0.259</td></tr>
+    </table>
+
+    <h3>Top feature coefficients (effect on log-price)</h3>
+    <p style="font-size:12px;color:#57606a;margin-bottom:10px;">Positive = increases predicted price &nbsp;|&nbsp; Negative = decreases predicted price</p>
+
+    <div id="coeff-bars">
+      <!-- Rendered by JS below -->
+    </div>
+  </div>
+
+  <!-- QA Results -->
+  <h2>3. End-to-end QA Results</h2>
+  <div class="card">
+    <table>
+      <tr><th>Check</th><th>Result</th></tr>
+      <tr><td>Dataset loaded &amp; inspected</td><td><span class="badge green">PASS</span> 1,303 rows, 0 missing values</td></tr>
+      <tr><td>Model training (train_model.py)</td><td><span class="badge green">PASS</span> 32 coefficients, R&sup2;=0.826</td></tr>
+      <tr><td>Manual coefficient verification</td><td><span class="badge green">PASS</span> Python + browser give identical &#8377;52,739</td></tr>
+      <tr><td>Web app loads (file:// protocol)</td><td><span class="badge green">PASS</span> HTTP 200, title correct</td></tr>
+      <tr><td>Console errors</td><td><span class="badge green">0 errors</span></td></tr>
+      <tr><td>Failed network requests</td><td><span class="badge green">0 failures</span></td></tr>
+      <tr><td>Form validation (empty submit)</td><td><span class="badge green">PASS</span> Inline errors shown, no prediction fired</td></tr>
+      <tr><td>Prediction result card visible</td><td><span class="badge green">PASS</span></td></tr>
+      <tr><td>Disclaimer present</td><td><span class="badge green">PASS</span> &ldquo;Historical estimate only&rdquo; banner visible</td></tr>
+      <tr><td>Dataset source banner present</td><td><span class="badge green">PASS</span> Kaggle / CampusX / idealo.de 2019 cited</td></tr>
+      <tr><td>Model metrics strip present</td><td><span class="badge green">PASS</span> R&sup2;, MAPE, rows, split displayed</td></tr>
+      <tr><td>Feature impact bar chart</td><td><span class="badge green">PASS</span> 13 bars rendered</td></tr>
+      <tr><td>Currency label</td><td><span class="badge green">PASS</span> &#8377; INR (not EUR, not USD)</td></tr>
+      <tr><td>Screenshot saved</td><td><span class="badge green">PASS</span> <code>screenshot_result.png</code></td></tr>
+    </table>
+
+    <h3>Sample predictions (browser-verified)</h3>
+    <table>
+      <tr><th>Configuration</th><th>Predicted Price</th><th>Range (±21%)</th></tr>
+      <tr>
+        <td>Dell Core i5 Notebook &mdash; 8 GB RAM, 512 GB SSD, 15.6&rdquo; FHD IPS, Windows 10, 1.8 kg</td>
+        <td class="price-cell">&#8377;52,739</td>
+        <td style="font-size:12px;color:#57606a;">&#8377;41,769 &ndash; &#8377;63,708</td>
+      </tr>
+      <tr>
+        <td>Apple Ultrabook &mdash; Core i7, 16 GB RAM, 512 GB SSD, 13.3&rdquo; Retina, macOS, 1.37 kg</td>
+        <td class="price-cell">&#8377;1,33,646</td>
+        <td style="font-size:12px;color:#57606a;">&#8377;1,05,848 &ndash; &#8377;1,61,445</td>
+      </tr>
+      <tr>
+        <td>MSI Gaming &mdash; Core i7, 16 GB RAM, 1 TB SSD, 15.6&rdquo; FHD, RTX GPU, Windows 10, 2.7 kg</td>
+        <td class="price-cell">&#8377;1,04,823</td>
+        <td style="font-size:12px;color:#57606a;">&#8377;83,020 &ndash; &#8377;1,26,626</td>
+      </tr>
+    </table>
+  </div>
+
+  <!-- Project files -->
+  <h2>4. Project Files</h2>
+  <div class="card">
+    <div class="file-row"><span class="file-name">laptop_price.csv</span><span class="file-desc">Real dataset — 1,303 laptops, prices in INR. Sourced from Kaggle (CampusX / idealo.de 2019).</span></div>
+    <div class="file-row"><span class="file-name">train_model.py</span><span class="file-desc">Ridge regression training script. Pure Python stdlib — no pip dependencies. Outputs model_coeffs.json.</span></div>
+    <div class="file-row"><span class="file-name">model_coeffs.json</span><span class="file-desc">Trained model coefficients (32 values), test metrics (R², MAPE, RMSE), and dataset provenance.</span></div>
+    <div class="file-row"><span class="file-name">inspect_data.py</span><span class="file-desc">Column audit: price range, missing values, categorical distributions.</span></div>
+    <div class="file-row"><span class="file-name">verify_model.py</span><span class="file-desc">Loads dataset + coefficients, confirms price range, runs a manual prediction check.</span></div>
+    <div class="file-row"><span class="file-name">laptop_price_predictor.html</span><span class="file-desc">Complete single-file web app. All CSS + JS inline. No internet connection or build step required.</span></div>
+    <div class="file-row"><span class="file-name">server.js</span><span class="file-desc">Minimal Node.js static server (optional — app works via file:// directly).</span></div>
+    <div class="file-row"><span class="file-name">qa_full.mjs</span><span class="file-desc">Browser automation QA script — tests 3 realistic configs, takes full-page screenshot.</span></div>
+    <div class="file-row"><span class="file-name">screenshot_result.png</span><span class="file-desc">Verified screenshot: MSI Gaming config showing ₹1,04,823 prediction with feature impact bars.</span></div>
+    <div class="file-row"><span class="file-name">requirements.txt</span><span class="file-desc">Python dependency declaration (stdlib only; optional scikit-learn/pandas noted).</span></div>
+    <div class="file-row"><span class="file-name">README.md</span><span class="file-desc">Project documentation, quick start, model details, sample predictions, disclaimer.</span></div>
+    <div class="file-row"><span class="file-name">project_report.html</span><span class="file-desc">This report — dataset analysis, model evaluation, QA results, and file inventory.</span></div>
+  </div>
+
+  <footer>Made with IBM Bob</footer>
+</div>
+
+<script>
+// Render real coefficient bars from training output
+const coeffs = [
+  { label: 'SSD Flag',        val:  0.249279, pos: true },
+  { label: 'Type: Workstation', val: 0.483172, pos: true },
+  { label: 'Type: Ultrabook', val:  0.300481, pos: true },
+  { label: 'CPU Tier',        val:  0.159841, pos: true },
+  { label: 'CPU Freq (GHz)',  val:  0.145454, pos: true },
+  { label: 'log₂(RAM)',       val:  0.220952, pos: true },
+  { label: 'log₂(Storage)',   val:  0.071298, pos: true },
+  { label: 'log(Pixels)',     val:  0.169456, pos: true },
+  { label: 'Company: Razer',  val:  0.193716, pos: true },
+  { label: 'Type: 2-in-1',    val:  0.215893, pos: true },
+  { label: 'OS: Linux',       val: -0.421590, pos: false },
+  { label: 'OS: No OS',       val: -0.506216, pos: false },
+  { label: 'Company: Acer',   val: -0.217672, pos: false },
+  { label: 'Screen Size',     val: -0.059029, pos: false },
+];
+
+const maxAbs = Math.max(...coeffs.map(c => Math.abs(c.val)));
+const container = document.getElementById('coeff-bars');
+coeffs
+  .sort((a,b) => Math.abs(b.val) - Math.abs(a.val))
+  .forEach(c => {
+    const pct = Math.abs(c.val) / maxAbs * 100;
+    const sign = c.val >= 0 ? '+' : '';
+    const div = document.createElement('div');
+    div.className = 'coeff-row';
+    div.innerHTML =
+      '<span class="coeff-label">' + c.label + '</span>' +
+      '<div class="coeff-track"><div class="coeff-fill' + (c.pos ? '' : ' neg') +
+      '" style="width:' + pct.toFixed(1) + '%"></div></div>' +
+      '<span class="coeff-val">' + sign + c.val.toFixed(3) + '</span>';
+    container.appendChild(div);
+  });
+</script>
+</body>
+</html>

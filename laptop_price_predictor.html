@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Laptop Price Estimator</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, "Segoe UI", system-ui, sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+    background: #f0f2f5;
+    color: #1f2328;
+    min-height: 100vh;
+    padding: 24px 16px 48px;
+  }
+
+  .wrapper {
+    max-width: 780px;
+    margin: 0 auto;
+  }
+
+  /* ── Header ── */
+  .header {
+    background: #1f2328;
+    color: #fff;
+    border-radius: 10px;
+    padding: 24px 28px 20px;
+    margin-bottom: 18px;
+  }
+  .header h1 { font-size: 20px; font-weight: 700; letter-spacing: -0.3px; }
+  .header p  { font-size: 13px; color: #9ca3af; margin-top: 4px; }
+
+  /* ── Dataset badge ── */
+  .source-bar {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-bottom: 18px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .source-bar .badge {
+    background: #3b82d4;
+    color: #fff;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 4px;
+    white-space: nowrap;
+    margin-top: 2px;
+  }
+  .source-bar .text { font-size: 12.5px; color: #57606a; }
+  .source-bar .text strong { color: #1f2328; }
+
+  /* ── Model metrics strip ── */
+  .metrics {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-bottom: 18px;
+  }
+  .metric-card {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 12px 14px;
+    text-align: center;
+  }
+  .metric-card .val { font-size: 22px; font-weight: 700; color: #3b82d4; }
+  .metric-card .lbl { font-size: 11px; color: #57606a; margin-top: 2px; }
+
+  /* ── Form card ── */
+  .card {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 24px 24px 20px;
+    margin-bottom: 18px;
+  }
+  .card h2 { font-size: 15px; font-weight: 600; margin-bottom: 18px; color: #1f2328; }
+
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px 20px;
+  }
+  @media (max-width: 540px) { .form-grid { grid-template-columns: 1fr; } .metrics { grid-template-columns: repeat(2,1fr); } }
+
+  .field { display: flex; flex-direction: column; gap: 5px; }
+  .field label { font-size: 12.5px; font-weight: 600; color: #374151; }
+  .field select, .field input {
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    padding: 8px 10px;
+    font-size: 13.5px;
+    font-family: inherit;
+    color: #1f2328;
+    background: #fafafa;
+    transition: border-color .15s;
+    width: 100%;
+  }
+  .field select:focus, .field input:focus {
+    outline: none;
+    border-color: #3b82d4;
+    background: #fff;
+  }
+  .field .hint { font-size: 11.5px; color: #57606a; }
+  .field .err  { font-size: 11.5px; color: #dc2626; display: none; }
+  .field.invalid input, .field.invalid select { border-color: #dc2626; }
+  .field.invalid .err { display: block; }
+
+  .submit-row { margin-top: 20px; display: flex; gap: 10px; align-items: center; }
+  button.primary {
+    background: #1f2328;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 10px 24px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background .15s;
+  }
+  button.primary:hover { background: #2d333b; }
+  button.reset {
+    background: none;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    padding: 9px 18px;
+    font-size: 13px;
+    color: #57606a;
+    cursor: pointer;
+  }
+  button.reset:hover { background: #f7f8fa; }
+
+  /* ── Result card ── */
+  #result { display: none; }
+  .result-card {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 24px;
+    margin-bottom: 18px;
+  }
+  .result-card h2 { font-size: 14px; font-weight: 600; color: #57606a; margin-bottom: 6px; }
+  .result-card .price {
+    font-size: 38px;
+    font-weight: 800;
+    color: #1f2328;
+    letter-spacing: -1px;
+  }
+  .result-card .range {
+    font-size: 13px;
+    color: #57606a;
+    margin-top: 4px;
+  }
+  .result-card .range span { font-weight: 600; color: #374151; }
+
+  .breakdown {
+    margin-top: 20px;
+    border-top: 1px solid #f0f2f5;
+    padding-top: 16px;
+  }
+  .breakdown h3 { font-size: 12px; font-weight: 600; color: #57606a; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 10px; }
+  .bar-row { display: flex; align-items: center; gap: 8px; margin-bottom: 7px; }
+  .bar-row .bar-label { font-size: 12px; color: #374151; width: 130px; flex-shrink: 0; }
+  .bar-row .bar-track { flex: 1; height: 7px; background: #f0f2f5; border-radius: 4px; overflow: hidden; }
+  .bar-row .bar-fill  { height: 100%; border-radius: 4px; background: #3b82d4; transition: width .4s; }
+  .bar-row .bar-fill.neg { background: #9ca3af; }
+  .bar-row .bar-val   { font-size: 12px; color: #57606a; width: 52px; text-align: right; flex-shrink: 0; }
+
+  /* ── Disclaimer ── */
+  .disclaimer {
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 12px;
+    color: #78350f;
+    margin-bottom: 18px;
+  }
+  .disclaimer strong { font-weight: 600; }
+
+  /* ── Footer ── */
+  footer {
+    text-align: center;
+    font-size: 12px;
+    color: #9ca3af;
+    border-top: 1px solid #e5e7eb;
+    padding-top: 16px;
+    margin-top: 8px;
+  }
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+  <!-- Header -->
+  <div class="header">
+    <h1>Laptop Price Estimator</h1>
+    <p>Ridge regression trained on 1,303 real laptops &mdash; predicts price in Indian Rupees (&#8377;)</p>
+  </div>
+
+  <!-- Dataset source -->
+  <div class="source-bar">
+    <span class="badge">DATASET</span>
+    <div class="text">
+      <strong>laptop_data.csv</strong> &mdash; 1,303 laptops, prices in <strong>Indian Rupees (&#8377;)</strong>.
+      Source: <strong>Kaggle / CampusX</strong>, originally scraped from <strong>idealo.de (2019)</strong>.
+      Features: Company, Type, Screen, CPU, RAM, Storage, GPU, OS, Weight &mdash; 0 missing values.
+    </div>
+  </div>
+
+  <!-- Model metrics -->
+  <div class="metrics">
+    <div class="metric-card"><div class="val">0.826</div><div class="lbl">R&sup2; (test set)</div></div>
+    <div class="metric-card"><div class="val">20.8%</div><div class="lbl">MAPE (test set)</div></div>
+    <div class="metric-card"><div class="val">1,303</div><div class="lbl">Training rows</div></div>
+    <div class="metric-card"><div class="val">80/20</div><div class="lbl">Train / Test split</div></div>
+  </div>
+
+  <!-- Disclaimer -->
+  <div class="disclaimer">
+    <strong>Historical estimate only.</strong> This model was trained on 2019 laptop price data.
+    Actual current market prices may differ significantly due to inflation, new product generations,
+    supply changes, and regional pricing. Use this as a <em>reference estimate</em>, not a guaranteed market price.
+  </div>
+
+  <!-- Input form -->
+  <div class="card">
+    <h2>Enter Laptop Specifications</h2>
+    <div class="form-grid">
+
+      <div class="field" id="f-company">
+        <label>Brand / Company</label>
+        <select id="company">
+          <option value="">-- Select brand --</option>
+          <option>Apple</option><option>Asus</option><option>Dell</option>
+          <option>HP</option><option>Lenovo</option><option>MSI</option>
+          <option>Microsoft</option><option>Razer</option><option>Samsung</option>
+          <option>Acer</option><option value="Other">Other</option>
+        </select>
+        <span class="err">Please select a brand.</span>
+      </div>
+
+      <div class="field" id="f-type">
+        <label>Laptop Type</label>
+        <select id="type">
+          <option value="">-- Select type --</option>
+          <option>Notebook</option><option>Ultrabook</option><option>Gaming</option>
+          <option>2 in 1 Convertible</option><option>Workstation</option><option>Netbook</option>
+        </select>
+        <span class="err">Please select a type.</span>
+      </div>
+
+      <div class="field" id="f-ram">
+        <label>RAM</label>
+        <select id="ram">
+          <option value="">-- Select RAM --</option>
+          <option value="2">2 GB</option><option value="4">4 GB</option>
+          <option value="6">6 GB</option><option value="8">8 GB</option>
+          <option value="12">12 GB</option><option value="16">16 GB</option>
+          <option value="24">24 GB</option><option value="32">32 GB</option>
+          <option value="64">64 GB</option>
+        </select>
+        <span class="err">Please select RAM.</span>
+      </div>
+
+      <div class="field" id="f-storage">
+        <label>Storage (GB)</label>
+        <input type="number" id="storage" placeholder="e.g. 512" min="16" max="4096">
+        <span class="hint">Total storage in GB (e.g. 256, 512, 1024)</span>
+        <span class="err">Enter storage between 16 and 4096 GB.</span>
+      </div>
+
+      <div class="field" id="f-ssd">
+        <label>Storage Type</label>
+        <select id="ssd">
+          <option value="1">SSD / NVMe / Flash</option>
+          <option value="0">HDD</option>
+        </select>
+      </div>
+
+      <div class="field" id="f-screen">
+        <label>Screen Size (inches)</label>
+        <input type="number" id="screen" placeholder="e.g. 15.6" min="10" max="20" step="0.1">
+        <span class="hint">Typical: 13.3, 14, 15.6, 17.3</span>
+        <span class="err">Enter screen size between 10 and 20 inches.</span>
+      </div>
+
+      <div class="field" id="f-res">
+        <label>Screen Resolution</label>
+        <select id="res">
+          <option value="1366x768">HD &mdash; 1366×768</option>
+          <option value="1600x900">HD+ &mdash; 1600×900</option>
+          <option value="1920x1080" selected>Full HD &mdash; 1920×1080</option>
+          <option value="2560x1440">QHD &mdash; 2560×1440</option>
+          <option value="2560x1600">2560×1600 (Retina 13")</option>
+          <option value="2880x1800">2880×1800 (Retina 15")</option>
+          <option value="3840x2160">4K UHD &mdash; 3840×2160</option>
+        </select>
+      </div>
+
+      <div class="field" id="f-ips">
+        <label>Panel Type</label>
+        <select id="ips">
+          <option value="1">IPS / Retina / 4K</option>
+          <option value="0">TN / Standard</option>
+        </select>
+      </div>
+
+      <div class="field" id="f-cpu-tier">
+        <label>CPU Tier</label>
+        <select id="cpu-tier">
+          <option value="">-- Select CPU --</option>
+          <option value="4">Intel Core i9 / Xeon</option>
+          <option value="3">Intel Core i7 / Ryzen 7</option>
+          <option value="2">Intel Core i5 / Ryzen 5</option>
+          <option value="1">Intel Core i3 / Ryzen 3 / Pentium</option>
+          <option value="0">Atom / Celeron / Other</option>
+        </select>
+        <span class="err">Please select a CPU tier.</span>
+      </div>
+
+      <div class="field" id="f-cpu-freq">
+        <label>CPU Base Clock (GHz)</label>
+        <input type="number" id="cpu-freq" placeholder="e.g. 2.5" min="0.5" max="5.0" step="0.1">
+        <span class="hint">Base clock speed (e.g. 1.6, 2.3, 2.8, 3.6)</span>
+        <span class="err">Enter CPU frequency between 0.5 and 5.0 GHz.</span>
+      </div>
+
+      <div class="field" id="f-gpu">
+        <label>GPU Tier</label>
+        <select id="gpu">
+          <option value="">-- Select GPU --</option>
+          <option value="3">Dedicated High-end (RTX / GTX 10xx+, RX Vega)</option>
+          <option value="2">Dedicated Mid (GTX 900 series)</option>
+          <option value="1">Dedicated Entry (MX series, Radeon R5/R7)</option>
+          <option value="0">Integrated (Intel HD / UHD / Iris)</option>
+        </select>
+        <span class="err">Please select a GPU tier.</span>
+      </div>
+
+      <div class="field" id="f-os">
+        <label>Operating System</label>
+        <select id="os">
+          <option value="">-- Select OS --</option>
+          <option>Windows 10</option><option>macOS</option><option>Mac OS X</option>
+          <option>Linux</option><option>Chrome OS</option>
+          <option>No OS</option><option>Other</option>
+        </select>
+        <span class="err">Please select an OS.</span>
+      </div>
+
+      <div class="field" id="f-weight">
+        <label>Weight (kg)</label>
+        <input type="number" id="weight" placeholder="e.g. 1.8" min="0.5" max="6" step="0.01">
+        <span class="hint">e.g. 1.0 (ultralight), 1.8 (average), 3.0 (gaming)</span>
+        <span class="err">Enter weight between 0.5 and 6 kg.</span>
+      </div>
+
+    </div><!-- /form-grid -->
+
+    <div class="submit-row">
+      <button class="primary" onclick="estimate()">Estimate Price</button>
+      <button class="reset" onclick="resetForm()">Reset</button>
+    </div>
+  </div><!-- /card -->
+
+  <!-- Result -->
+  <div id="result">
+    <div class="result-card">
+      <h2>Estimated Historical Price (&#8377; INR)</h2>
+      <div class="price" id="price-display">&#8377;0</div>
+      <div class="range" id="range-display"></div>
+
+      <div class="breakdown">
+        <h3>Feature Impact on Log-Price</h3>
+        <div id="bars"></div>
+      </div>
+    </div>
+  </div>
+
+  <footer>Made with IBM Bob</footer>
+</div><!-- /wrapper -->
+
+<script>
+// ── Real model coefficients from Ridge regression on laptop_data.csv ─────────
+// Trained on 1,303 rows, R²=0.826, MAPE=20.8% on held-out 20% test set
+// Model: log(price_INR) = intercept + sum(coeff_i * feature_i)
+
+const COEFFS = {
+  intercept:         7.151945,
+  log2_ram:          0.220952,
+  log2_storage:      0.071298,
+  screen_size:      -0.059029,
+  log_pixels:        0.169456,
+  ips_flag:          0.022922,
+  cpu_freq_ghz:      0.145454,
+  cpu_tier:          0.159841,
+  gpu_tier:          0.009139,
+  ssd_flag:          0.249279,
+  weight_kg:         0.102126,
+  company_Apple:    -0.106651,
+  company_Asus:     -0.123953,
+  company_Dell:     -0.080156,
+  company_HP:       -0.015822,
+  company_Lenovo:   -0.106716,
+  company_MSI:      -0.048970,
+  company_Microsoft:-0.169955,
+  company_Razer:     0.193716,
+  company_Samsung:  -0.036731,
+  company_Acer:     -0.217672,
+  type_Gaming:       0.103047,
+  type_Ultrabook:    0.300481,
+  type_Workstation:  0.483172,
+  "type_2_in_1_Convertible": 0.215893,
+  type_Notebook:     0.062368,
+  "os_Windows_10":  -0.248784,
+  "os_macOS":       -0.089465,
+  "os_Mac_OS_X":    -0.017186,
+  "os_Linux":       -0.421590,
+  "os_Chrome_OS":   -0.218317,
+  "os_No_OS":       -0.506216,
+};
+
+// Model MAPE ± band
+const MAPE = 0.208;
+
+function validate() {
+  let ok = true;
+
+  const checks = [
+    { id: 'company',  field: 'f-company',  test: v => v !== '' },
+    { id: 'type',     field: 'f-type',     test: v => v !== '' },
+    { id: 'ram',      field: 'f-ram',      test: v => v !== '' },
+    { id: 'storage',  field: 'f-storage',  test: v => v !== '' && +v >= 16 && +v <= 4096 },
+    { id: 'screen',   field: 'f-screen',   test: v => v !== '' && +v >= 10 && +v <= 20 },
+    { id: 'cpu-tier', field: 'f-cpu-tier', test: v => v !== '' },
+    { id: 'cpu-freq', field: 'f-cpu-freq', test: v => v !== '' && +v >= 0.5 && +v <= 5.0 },
+    { id: 'gpu',      field: 'f-gpu',      test: v => v !== '' },
+    { id: 'os',       field: 'f-os',       test: v => v !== '' },
+    { id: 'weight',   field: 'f-weight',   test: v => v !== '' && +v >= 0.5 && +v <= 6 },
+  ];
+
+  checks.forEach(c => {
+    const el = document.getElementById(c.id);
+    const fld = document.getElementById(c.field);
+    if (!c.test(el.value)) {
+      fld.classList.add('invalid');
+      ok = false;
+    } else {
+      fld.classList.remove('invalid');
+    }
+  });
+  return ok;
+}
+
+function resolutionPixels(resStr) {
+  const [w, h] = resStr.split('x').map(Number);
+  return w * h;
+}
+
+function estimate() {
+  if (!validate()) return;
+
+  const company  = document.getElementById('company').value;
+  const type     = document.getElementById('type').value;
+  const ram      = +document.getElementById('ram').value;
+  const storage  = +document.getElementById('storage').value;
+  const ssd      = +document.getElementById('ssd').value;
+  const screen   = +document.getElementById('screen').value;
+  const resStr   = document.getElementById('res').value;
+  const ips      = +document.getElementById('ips').value;
+  const cpuTier  = +document.getElementById('cpu-tier').value;
+  const cpuFreq  = +document.getElementById('cpu-freq').value;
+  const gpu      = +document.getElementById('gpu').value;
+  const os       = document.getElementById('os').value;
+  const weight   = +document.getElementById('weight').value;
+
+  const pixels   = resolutionPixels(resStr);
+
+  // ── Build feature contributions ─────────────────────────────────────────────
+  const feats = {};
+
+  // Numeric features
+  feats['log2_ram']      = Math.log2(Math.max(ram, 1))     * COEFFS.log2_ram;
+  feats['log2_storage']  = Math.log2(Math.max(storage, 1)) * COEFFS.log2_storage;
+  feats['screen_size']   = screen                           * COEFFS.screen_size;
+  feats['log_pixels']    = Math.log(Math.max(pixels, 1))   * COEFFS.log_pixels;
+  feats['ips_flag']      = ips                              * COEFFS.ips_flag;
+  feats['cpu_freq_ghz']  = cpuFreq                         * COEFFS.cpu_freq_ghz;
+  feats['cpu_tier']      = cpuTier                         * COEFFS.cpu_tier;
+  feats['gpu_tier']      = gpu                             * COEFFS.gpu_tier;
+  feats['ssd_flag']      = ssd                             * COEFFS.ssd_flag;
+  feats['weight_kg']     = weight                          * COEFFS.weight_kg;
+
+  // Company dummies
+  ['Apple','Asus','Dell','HP','Lenovo','MSI','Microsoft','Razer','Samsung','Acer'].forEach(c => {
+    const key = 'company_' + c;
+    feats[key] = (company === c ? 1 : 0) * COEFFS[key];
+  });
+
+  // Type dummies
+  ['Gaming','Ultrabook','Workstation','2_in_1_Convertible','Notebook'].forEach(t => {
+    const raw  = t.replace(/_/g, ' ');
+    const key  = 'type_' + t;
+    feats[key] = (type === raw ? 1 : 0) * COEFFS[key];
+  });
+
+  // OS dummies
+  ['Windows_10','macOS','Mac_OS_X','Linux','Chrome_OS','No_OS'].forEach(o => {
+    const raw = o.replace(/_/g, ' ');
+    const key = 'os_' + o;
+    feats[key] = (os === raw ? 1 : 0) * COEFFS[key];
+  });
+
+  const logPrice = COEFFS.intercept + Object.values(feats).reduce((a, b) => a + b, 0);
+  const price    = Math.exp(logPrice);
+  const low      = Math.round(price * (1 - MAPE));
+  const high     = Math.round(price * (1 + MAPE));
+
+  // ── Display ─────────────────────────────────────────────────────────────────
+  document.getElementById('price-display').textContent =
+    '\u20B9' + Math.round(price).toLocaleString('en-IN');
+  document.getElementById('range-display').innerHTML =
+    'Estimated range (±' + (MAPE*100).toFixed(0) + '% model MAPE): ' +
+    '<span>\u20B9' + low.toLocaleString('en-IN') + '</span>' +
+    ' &ndash; ' +
+    '<span>\u20B9' + high.toLocaleString('en-IN') + '</span>';
+
+  // ── Feature impact bars ──────────────────────────────────────────────────────
+  const labels = {
+    log2_ram:     'RAM',
+    log2_storage: 'Storage',
+    screen_size:  'Screen Size',
+    log_pixels:   'Resolution',
+    ips_flag:     'IPS Panel',
+    cpu_freq_ghz: 'CPU Clock',
+    cpu_tier:     'CPU Tier',
+    gpu_tier:     'GPU Tier',
+    ssd_flag:     'SSD Storage',
+    weight_kg:    'Weight',
+  };
+
+  // Include top company/type/os contributions too
+  const allContribs = { ...feats };
+  // Flatten dummies into their top contributions
+  const dummyGroups = [
+    { prefix: 'company_', label: 'Brand' },
+    { prefix: 'type_',    label: 'Type'  },
+    { prefix: 'os_',      label: 'OS'    },
+  ];
+
+  const groupedContribs = {};
+  dummyGroups.forEach(g => {
+    let sum = 0;
+    Object.keys(feats).forEach(k => { if (k.startsWith(g.prefix)) sum += feats[k]; });
+    groupedContribs[g.label] = sum;
+  });
+
+  const numericContribs = {};
+  Object.keys(labels).forEach(k => { numericContribs[labels[k]] = feats[k]; });
+  const allDisplay = { ...numericContribs, ...groupedContribs };
+
+  const maxAbs = Math.max(...Object.values(allDisplay).map(Math.abs), 0.01);
+
+  const barsEl = document.getElementById('bars');
+  barsEl.innerHTML = '';
+
+  Object.entries(allDisplay)
+    .sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]))
+    .forEach(([lbl, val]) => {
+      const pct   = Math.abs(val) / maxAbs * 100;
+      const isNeg = val < 0;
+      const sign  = val >= 0 ? '+' : '';
+      const row   = document.createElement('div');
+      row.className = 'bar-row';
+      row.innerHTML =
+        '<span class="bar-label">' + lbl + '</span>' +
+        '<div class="bar-track"><div class="bar-fill' + (isNeg ? ' neg' : '') +
+        '" style="width:' + pct.toFixed(1) + '%"></div></div>' +
+        '<span class="bar-val">' + sign + val.toFixed(3) + '</span>';
+      barsEl.appendChild(row);
+    });
+
+  document.getElementById('result').style.display = 'block';
+  document.getElementById('result').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function resetForm() {
+  ['company','type','ram','ssd','res','ips','cpu-tier','gpu','os'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  ['storage','screen','cpu-freq','weight'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  document.getElementById('res').value  = '1920x1080';
+  document.getElementById('ips').value  = '1';
+  document.getElementById('ssd').value  = '1';
+  document.getElementById('result').style.display = 'none';
+  ['f-company','f-type','f-ram','f-storage','f-screen','f-cpu-tier','f-cpu-freq','f-gpu','f-os','f-weight']
+    .forEach(id => document.getElementById(id).classList.remove('invalid'));
+}
+</script>
+</body>
+</html>
