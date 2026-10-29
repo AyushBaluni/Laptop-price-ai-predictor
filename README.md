@@ -1,111 +1,175 @@
-# Laptop Price Estimator
+# 💻 Laptop Price AI Predictor
 
-A browser-based laptop price estimation tool trained on **1,303 real laptop records** using Ridge Regression. No external libraries required — runs entirely in-browser.
+A browser-based machine learning application that estimates laptop prices using **Ridge Regression** trained on 1,303 historical laptop records. The application uses HTML, CSS, and JavaScript to generate predictions directly in the browser without requiring an external prediction API.
 
----
+> **Note:** Predictions are estimates based on historical data, not guaranteed current market prices.
 
-## Dataset
+## ✨ Features
 
-| Field | Value |
+- 🤖 Machine learning-based laptop price estimation.
+- 💻 Browser-based interface built with HTML, CSS, and JavaScript.
+- 📊 Model trained on 1,303 laptop records.
+- 🧮 Ridge Regression with engineered hardware features.
+- 📱 Responsive interface for different screen sizes.
+- ⚡ Predictions calculated locally in the browser.
+- 📈 Model evaluation using R² and Mean Absolute Percentage Error (MAPE).
+
+## 📂 Dataset
+
+| Property | Details |
 |---|---|
-| **File** | `laptop_price.csv` |
-| **Source** | Kaggle — *Laptop Price Dataset* (CampusX / Rashmi Margani version) |
-| **Original scrape** | [idealo.de](https://www.idealo.de), **2019** |
-| **Rows** | 1,303 |
-| **Price currency** | **Indian Rupees (₹ INR)** |
-| **Missing values** | 0 |
-| **Columns** | Company, TypeName, Inches, ScreenResolution, Cpu, Ram, Memory, Gpu, OpSys, Weight, Price |
+| Dataset | Laptop Price Dataset |
+| Source | Kaggle |
+| Original data source | idealo.de |
+| Original scrape year | 2019 |
+| Number of records | 1,303 |
+| Currency | Indian Rupees (INR) |
+| Missing values | 0 |
+| Target variable | Laptop price |
 
-> ⚠️ **Historical data notice:** Prices reflect the Indian market circa 2019. Current market prices may differ significantly due to inflation, supply-chain changes, and new product generations. All predictions are **estimates based on historical data**, not guaranteed current market prices.
+The dataset includes laptop specifications such as company, product type, screen size, processor, RAM, storage, graphics card, operating system, weight, and price.
 
----
+### ⚠️ Dataset limitation
 
-## Model
+The dataset originates from 2019. Therefore, the model may not accurately reflect current laptop prices because of inflation, new hardware generations, and changes in the laptop market.
+
+## 🧠 Machine Learning Model
+
+The application uses Ridge Regression on the logarithm of laptop prices.
 
 | Property | Value |
 |---|---|
-| Algorithm | Ridge Regression on `log(price_INR)` (λ = 0.01) |
-| Features | 31 (numeric + one-hot encoded company / type / OS) |
-| Train / Test split | 80 / 20 (random seed 42) |
-| **R² (test set)** | **0.826** |
-| **MAPE (test set)** | **20.8%** |
+| Algorithm | Ridge Regression |
+| Target transformation | Natural logarithm of price |
+| Regularization parameter | λ = 0.01 |
+| Train/test split | 80/20 |
+| Random seed | 42 |
+| Reported test R² | 0.826 |
+| Reported test MAPE | 20.8% |
 
-### Key numeric features
-- `log₂(RAM_GB)` — RAM has the strongest per-unit effect
-- `log₂(Storage_GB)` — storage size (SSD vs HDD flagged separately)
-- `log(pixels)` — screen resolution (width × height)
-- `cpu_tier` (0–4) — CPU family tier
-- `cpu_freq_ghz` — base clock speed
-- `gpu_tier` (0–3) — GPU class (integrated → dedicated high-end)
-- `ssd_flag` — SSD/NVMe adds ~28% to price vs HDD
-- `screen_size` (inches)
-- `weight_kg`
+*The reported metrics should be reproducible using the training script and the same dataset.*
 
----
+### Engineered features
 
-## Project files
+The model uses features representing:
 
-```
-laptop_price_predictor/
-├── laptop_price.csv          # Real dataset (1,303 rows, INR prices)
-├── train_model.py            # Ridge regression training script (pure Python stdlib)
-├── verify_model.py           # Dataset + model sanity checks
-├── inspect_data.py           # Column / price / missing-value audit
-├── model_coeffs.json         # Trained coefficients exported as JSON
-├── laptop_price_predictor.html  # Complete single-file web app (HTML + CSS + JS)
-├── server.js                 # Minimal Node.js static file server (optional)
-├── qa_full.mjs               # Browser automation QA script (3 configs + screenshot)
-├── screenshot_result.png     # Verified screenshot of working prediction
-├── requirements.txt          # Python dependencies (stdlib only)
-└── README.md                 # This file
-```
+- RAM capacity.
+- Storage capacity and storage type.
+- Screen resolution.
+- Processor tier and base clock speed.
+- Graphics processing capability.
+- Screen size.
+- Laptop weight.
+- Laptop manufacturer, product type, and operating system.
 
----
+The feature extraction and encoding used by the training script must match the calculations performed by the browser application.
 
-## Quick start
+## 🛠️ Technology Stack
 
-### Open the app (no server needed)
+- **Frontend:** HTML, CSS, JavaScript
+- **Machine Learning:** Ridge Regression
+- **Training:** Python
+- **Model integration:** JSON coefficients
+- **Dataset:** CSV
+- **Optional local server:** Node.js
+
+## 🚀 Getting Started
+
+### 1. Clone the repository
+
 ```bash
-# Simply double-click, or:
-open laptop_price_predictor.html       # macOS
-start laptop_price_predictor.html      # Windows
-xdg-open laptop_price_predictor.html  # Linux
+git clone https://github.com/AyushBaluni/Laptop-price-ai-predictor.git
+cd Laptop-price-ai-predictor
 ```
 
-### Or serve it locally
+### 2. Run the application
+
+If `index.html` is in the repository root, open it directly in your browser.
+
+Alternatively, start a local HTTP server:
+
 ```bash
-# Python
 python -m http.server 8080
-# Then open http://localhost:8080/laptop_price_predictor.html
-
-# Node.js
-node server.js
-# Then open http://localhost:8787/
 ```
 
-### Re-train the model
+Then visit:
+
+http://localhost:8080/
+
+### 3. Retrain the model
+
+If Python is installed, run:
+
 ```bash
 python train_model.py
-# Outputs: model_coeffs.json  (32 coefficients, test metrics)
 ```
 
-### Verify dataset + model
+The script should generate or update the model coefficient file according to its implementation.
+
+### 4. Verify the model
+
+Run:
+
 ```bash
 python verify_model.py
 ```
 
+This runs the checks implemented in the verification script.
+
+## 📁 Project Structure
+
+The structure below is illustrative. Keep only filenames that actually exist in the repository.
+
+```text
+Laptop-price-ai-predictor/
+├── index.html
+├── laptop_price.csv
+├── train_model.py
+├── verify_model.py
+├── inspect_data.py
+├── model_coeffs.json
+├── server.js
+├── requirements.txt
+├── qa_full.mjs
+├── screenshot_result.png
+└── README.md
+```
+
+## 📊 Model Evaluation
+
+The current implementation reports the following results:
+
+| Metric | Reported result |
+|---|---:|
+| Test R² | 0.826 |
+| Test MAPE | 20.8% |
+
+R² measures how much of the variation in the test-set prices is explained by the model. MAPE measures average absolute prediction error relative to actual prices.
+
+These metrics describe performance on the historical test dataset and do not guarantee equivalent accuracy on today's laptop market.
+
+## 🔮 Future Improvements
+
+- Train and evaluate the model using a more recent laptop price dataset.
+- Compare Ridge Regression against Random Forest and Gradient Boosting.
+- Improve validation across different price ranges.
+- Add laptop configuration comparison.
+- Improve the user interface and accessibility.
+- Add model performance visualizations.
+- Introduce a statistically justified prediction interval.
+
+## ⚠️ Disclaimer
+
+This application provides machine learning-based estimates using historical laptop pricing data. Actual prices may vary depending on the model, configuration, seller, location, availability, and date of purchase.
+
+Always check current retailer prices before making a purchasing decision.
+
+## 👨‍💻 Author
+
+**Ayush Baluni**
+
+GitHub: https://github.com/AyushBaluni
+
 ---
 
-## Sample predictions (from QA run)
-
-| Configuration | Estimated Price (₹) | Range |
-|---|---|---|
-| Dell i5 Notebook, 8 GB RAM, 512 GB SSD, FHD, Windows 10 | **₹52,739** | ₹41,769 – ₹63,708 |
-| Apple MacBook-style, 16 GB, 512 GB SSD, Retina, macOS | **₹1,33,646** | ₹1,05,848 – ₹1,61,445 |
-| MSI Gaming i7, 16 GB, 1 TB SSD, RTX GPU, Windows 10 | **₹1,04,823** | ₹83,020 – ₹1,26,626 |
-
----
-
-## Disclaimer
-
-This tool provides **historical price estimates** based on a 2019 laptop price dataset. Predictions are generated by a statistical model and are **not guaranteed current market prices**. Always verify current pricing with retailers before making purchasing decisions.
+⭐ If you find this project useful, consider starring the repository.
